@@ -16,7 +16,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("Gagal terhubung ke RabbitMQ: %v", err)
 	}
-	defer rabbitPublisher.Close()
+	// defer rabbitPublisher.Close()
 	log.Println("✅ Berhasil terhubung ke RabbitMQ!")
 
 	// Dependency Injection

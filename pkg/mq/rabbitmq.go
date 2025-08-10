@@ -13,7 +13,7 @@ type RabbitMQPublisher struct {
 }
 
 func NewRabbitMQPublisher(url string) (*RabbitMQPublisher, error) {
-	conn, err := amqp.Dial(url)
+	conn, err := amqp.Dial("amqp://guest:guest@host.docker.internal:5672/")
 	if err != nil {
 		return nil, err
 	}
