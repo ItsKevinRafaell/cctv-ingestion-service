@@ -1,14 +1,21 @@
+version: "3.8"
+
 services:
-  # Nama layanan kita
   api_ingestion:
-    build: . # Perintahkan Docker untuk membangun dari Dockerfile di folder ini
+    build: .
     ports:
-      # Map port 8081 di laptop kita ke port 8081 di dalam kontainer
       - "8081:8081"
     volumes:
-      # Ini penting agar file yang diunggah tetap bisa kita lihat dari laptop
-      - ./uploads:/app/uploads
-    # 'host.docker.internal' adalah alamat khusus untuk terhubung
-    # ke layanan yang berjalan di laptop kita (host) dari dalam kontainer Docker.
+      - uploads_data:/app/uploads
+    networks:
+      - cctv_network
     extra_hosts:
       - "host.docker.internal:host-gateway"
+
+volumes:
+  uploads_data:
+    external: true
+
+networks:
+  cctv_network:
+    external: true

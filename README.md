@@ -1,1 +1,1 @@
-curl -X POST -F "video_clip=@test_clip.mp4" http://localhost:8081/ingest/video
+curl -X POST -F "video_clip=@force_anomaly_clip.mp4" http://localhost:8081/ingest/video

@@ -3,7 +3,10 @@ package uploader
 import (
 	"context"
 	"fmt"
+	"io"
 	"mime/multipart"
+	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -42,21 +45,43 @@ func NewS3Uploader(endpoint, accessKey, secretKey, bucket string) (*S3Uploader, 
 	return &S3Uploader{Client: client, Bucket: bucket, Endpoint: endpoint}, nil
 }
 
-// Save mengunggah file ke bucket S3.
-func (u *S3Uploader) Save(file multipart.File, handler *multipart.FileHeader) (string, error) {
-	// Buat nama file unik
+func (u *S3Uploader) Save(file multipart.File, handler *multipart.FileHeader) (string, string, error) {
 	filename := fmt.Sprintf("%d-%s", time.Now().UnixNano(), handler.Filename)
+	uploadsDir := "/app/uploads"
+	// pastikan direktori ada
+	if err := os.MkdirAll(uploadsDir, 0755); err != nil {
+		return "", "", err
+	}
+	localPath := filepath.Join(uploadsDir, filename)
 
-	_, err := u.Client.PutObject(context.TODO(), &s3.PutObjectInput{
-		Bucket: aws.String(u.Bucket),
-		Key:    aws.String(filename),
-		Body:   file,
-	})
+	// create local file
+	localFile, err := os.Create(localPath)
 	if err != nil {
-		return "", err
+		return "", "", err
+	}
+	defer localFile.Close()
+
+	// copy konten dari multipart.File ke local file
+	if _, err := io.Copy(localFile, file); err != nil {
+		return "", "", err
 	}
 
-	// Hasilkan URL publik palsu untuk tujuan logging (di produksi ini akan berbeda)
+	// rewind local file ke awal untuk upload
+	if _, err := localFile.Seek(0, io.SeekStart); err != nil {
+		return "", "", err
+	}
+
+	// upload ke S3/MinIO dari localFile
+	_, err = u.Client.PutObject(context.TODO(), &s3.PutObjectInput{
+		Bucket: aws.String(u.Bucket),
+		Key:    aws.String(filename),
+		Body:   localFile,
+	})
+	if err != nil {
+		return "", "", err
+	}
+
+	// build public url (sesuaikan jika MinIO kamu pakai route berbeda)
 	fileURL := fmt.Sprintf("%s/%s/%s", u.Endpoint, u.Bucket, filename)
-	return fileURL, nil
+	return fileURL, localPath, nil
 }
