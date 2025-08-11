@@ -10,17 +10,25 @@ import (
 )
 
 func main() {
-	// Inisialisasi komponen
-	localUploader := uploader.NewLocalUploader("./uploads")
-	rabbitPublisher, err := mq.NewRabbitMQPublisher("amqp://guest:guest@localhost:5672/")
+	s3Uploader, err := uploader.NewS3Uploader(
+		"http://host.docker.internal:9000", // Endpoint MinIO dari dalam Docker
+		"minioadmin",                       // Access Key dari docker-compose
+		"minio-secret-key",                 // Secret Key dari docker-compose
+		"video-clips",                      // Nama bucket
+	)
+	if err != nil {
+		log.Fatalf("Gagal menginisialisasi S3 Uploader: %v", err)
+	}
+
+	rabbitPublisher, err := mq.NewRabbitMQPublisher("amqp://guest:guest@host.docker.internal:5672/")
 	if err != nil {
 		log.Fatalf("Gagal terhubung ke RabbitMQ: %v", err)
 	}
-	// defer rabbitPublisher.Close()
+	defer rabbitPublisher.Close()
 	log.Println("✅ Berhasil terhubung ke RabbitMQ!")
 
-	// Dependency Injection
-	ingestService := ingest.NewService(localUploader, rabbitPublisher)
+	// Dependency Injection dengan uploader baru
+	ingestService := ingest.NewService(s3Uploader, rabbitPublisher)
 	ingestHandler := ingest.NewHandler(ingestService)
 
 	// Routing

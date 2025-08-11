@@ -11,11 +11,11 @@ type Service interface {
 }
 
 type service struct {
-	uploader  *uploader.LocalUploader
+	uploader  *uploader.S3Uploader
 	publisher *mq.RabbitMQPublisher
 }
 
-func NewService(uploader *uploader.LocalUploader, publisher *mq.RabbitMQPublisher) Service {
+func NewService(uploader *uploader.S3Uploader, publisher *mq.RabbitMQPublisher) Service {
 	return &service{uploader: uploader, publisher: publisher}
 }
 

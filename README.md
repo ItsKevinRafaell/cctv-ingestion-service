@@ -1,0 +1,1 @@
+curl -X POST -F "video_clip=@test_clip.mp4" http://localhost:8081/ingest/video
